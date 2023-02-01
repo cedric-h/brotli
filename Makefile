@@ -1,16 +1,15 @@
+CC=clang --target=wasm32 -ffreestanding -nostdlib
 OS := $(shell uname)
-LIBSOURCES = $(wildcard c/common/*.c) $(wildcard c/dec/*.c) \
-             $(wildcard c/enc/*.c)
-SOURCES = $(LIBSOURCES) c/tools/brotli.c
+LIBSOURCES = $(wildcard c/common/*.c) $(wildcard c/enc/*.c)
+SOURCES = $(LIBSOURCES)
 BINDIR = bin
 OBJDIR = $(BINDIR)/obj
 LIBOBJECTS = $(addprefix $(OBJDIR)/, $(LIBSOURCES:.c=.o))
 OBJECTS = $(addprefix $(OBJDIR)/, $(SOURCES:.c=.o))
 LIB_A = libbrotli.a
-EXECUTABLE = brotli
-DIRS = $(OBJDIR)/c/common $(OBJDIR)/c/dec $(OBJDIR)/c/enc \
-       $(OBJDIR)/c/tools $(BINDIR)/tmp
-CFLAGS += -O2
+EXECUTABLE = smol.wasm
+DIRS = $(OBJDIR)/c/common $(OBJDIR)/c/enc $(BINDIR)/tmp
+CFLAGS += -O3 -isystem ced_crt -mbulk-memory
 ifeq ($(os), Darwin)
   CPPFLAGS += -DOS_MACOSX
 endif
@@ -36,7 +35,14 @@ $(DIRS):
 	mkdir -p $@
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -lm -o $(BINDIR)/$(EXECUTABLE)
+	$(CC) $(LDFLAGS) $(OBJECTS) \
+    -flto \
+    -Wl,--no-entry \
+    -Wl,--allow-undefined \
+    -Wl,--export=__heap_base \
+    -Wl,--export=BrotliEncoderCompress \
+    -Wl,--export=BrotliEncoderMaxCompressedSize \
+    -o $(BINDIR)/$(EXECUTABLE)
 
 lib: $(LIBOBJECTS)
 	rm -f $(LIB_A)
