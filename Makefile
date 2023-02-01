@@ -37,6 +37,7 @@ $(DIRS):
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) \
     -flto \
+    -Wl,--lto-O3 \
     -Wl,--no-entry \
     -Wl,--allow-undefined \
     -Wl,--export=__heap_base \
