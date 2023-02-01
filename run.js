@@ -43,17 +43,14 @@ const fullproglen = 147*2;
 
   let wasm, mem;
   let heap_ptr;
-  const sizes = {};
   const env = {
     malloc(bytes) {
       if (heap_ptr == undefined) heap_ptr = wasm.__heap_base.value;
       const allocated_ptr = heap_ptr;
-      sizes[allocated_ptr] = bytes;
       heap_ptr += bytes;
       heap_ptr += heap_ptr - Math.floor(heap_ptr/4)*4;
 
       const mem_left = mem.byteLength - heap_ptr;
-      // console.log('malloc', { size: allocated_ptr - wasm.__heap_base.value, allocated_ptr, mem_left });
       if (mem_left < 0) {
         wasm.memory.grow(Math.ceil(-mem_left / (1 << 16)));
         mem = wasm.memory.buffer; /* reattach buffer */
@@ -61,7 +58,6 @@ const fullproglen = 147*2;
       return allocated_ptr;
     },
     free(ptr) {
-      // if (ptr) console.log(`called free for ${ptr} (${sizes[ptr]} bytes)`);
     },
     log2: Math.log2,
     exit: () => { throw new Error(); },
